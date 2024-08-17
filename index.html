@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Finance Manager</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Personal Finance Manager</h1>
+    </header>
+    <main>
+        <section id="income-expense">
+            <h2>Income & Expenses</h2>
+            <form id="transaction-form">
+                <input type="text" id="description" placeholder="Description" required>
+                <input type="number" id="amount" placeholder="Amount" required>
+                <select id="type">
+                    <option value="income">Income</option>
+                    <option value="expense">Expense</option>
+                </select>
+                <select id="category">
+                    <option value="salary">Salary</option>
+                    <option value="food">Food</option>
+                    <option value="utilities">Utilities</option>
+                    <option value="entertainment">Entertainment</option>
+                </select>
+                <button type="submit">Add Transaction</button>
+            </form>
+            <ul id="transactions-list"></ul>
+        </section>
+        <section id="budget">
+            <h2>Budget</h2>
+            <div id="budget-progress"></div>
+        </section>
+        <section id="reports">
+            <h2>Monthly Report</h2>
+            <div id="monthly-report"></div>
+        </section>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>
