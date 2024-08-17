@@ -5,38 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personal Finance Manager</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <header>
         <h1>Personal Finance Manager</h1>
     </header>
     <main>
-        <section id="income-expense">
-            <h2>Income & Expenses</h2>
+        <section id="dashboard">
+            <h2>Dashboard</h2>
+            <div id="balance">Current Balance: $<span id="balance-amount">0.00</span></div>
+            <canvas id="expense-chart"></canvas>
+        </section>
+        <section id="transactions">
+            <h2>Transactions</h2>
             <form id="transaction-form">
                 <input type="text" id="description" placeholder="Description" required>
-                <input type="number" id="amount" placeholder="Amount" required>
+                <input type="number" id="amount" placeholder="Amount" step="0.01" required>
                 <select id="type">
                     <option value="income">Income</option>
                     <option value="expense">Expense</option>
                 </select>
                 <select id="category">
-                    <option value="salary">Salary</option>
-                    <option value="food">Food</option>
-                    <option value="utilities">Utilities</option>
-                    <option value="entertainment">Entertainment</option>
+                    <!-- Categories will be dynamically populated -->
                 </select>
                 <button type="submit">Add Transaction</button>
             </form>
+            <div id="transaction-filters">
+                <input type="text" id="search" placeholder="Search transactions">
+                <select id="filter-type">
+                    <option value="all">All Types</option>
+                    <option value="income">Income</option>
+                    <option value="expense">Expense</option>
+                </select>
+                <select id="filter-category">
+                    <option value="all">All Categories</option>
+                    <!-- Categories will be dynamically populated -->
+                </select>
+            </div>
             <ul id="transactions-list"></ul>
         </section>
         <section id="budget">
             <h2>Budget</h2>
-            <div id="budget-progress"></div>
+            <form id="budget-form">
+                <select id="budget-category">
+                    <!-- Categories will be dynamically populated -->
+                </select>
+                <input type="number" id="budget-amount" placeholder="Budget Amount" step="0.01" required>
+                <button type="submit">Set Budget</button>
+            </form>
+            <div id="budget-list"></div>
         </section>
         <section id="reports">
-            <h2>Monthly Report</h2>
-            <div id="monthly-report"></div>
+            <h2>Reports</h2>
+            <select id="report-type">
+                <option value="monthly">Monthly Report</option>
+                <option value="category">Category Report</option>
+            </select>
+            <div id="report-content"></div>
         </section>
     </main>
     <script src="script.js"></script>
