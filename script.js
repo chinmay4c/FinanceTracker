@@ -1,94 +1,122 @@
-// Initialize transactions array
-let transactions = [];
+const categories = ['Salary', 'Investments', 'Food', 'Utilities', 'Transportation', 'Entertainment', 'Healthcare', 'Education', 'Other'];
+let transactions = [], budgets = {};
 
-// DOM elements
-const transactionForm = document.getElementById('transaction-form');
-const transactionsList = document.getElementById('transactions-list');
-const budgetProgress = document.getElementById('budget-progress');
-const monthlyReport = document.getElementById('monthly-report');
+function initializeApp() {
+    populateCategories();
+    loadFromLocalStorage();
+    setupEventListeners();
+    updateUI();
+}
 
-// Add transaction
-transactionForm.addEventListener('submit', (e) => {
+function populateCategories() {
+    const html = categories.map(category => `<option value="${category}">${category}</option>`).join('');
+    document.querySelectorAll('#category, #filter-category, #budget-category').forEach(select => select.innerHTML += html);
+}
+
+function setupEventListeners() {
+    document.getElementById('transaction-form').addEventListener('submit', handleFormSubmit);
+    document.getElementById('budget-form').addEventListener('submit', handleFormSubmit);
+    document.getElementById('transactions').addEventListener('input', updateUI);
+    document.getElementById('report-type').addEventListener('change', updateUI);
+}
+
+function handleFormSubmit(e) {
     e.preventDefault();
-    
-    const description = document.getElementById('description').value;
-    const amount = parseFloat(document.getElementById('amount').value);
-    const type = document.getElementById('type').value;
-    const category = document.getElementById('category').value;
+    const formId = e.target.id;
+    const data = formId === 'transaction-form' 
+        ? { id: Date.now(), description: document.getElementById('description').value, amount: parseFloat(document.getElementById('amount').value), type: document.getElementById('type').value, category: document.getElementById('category').value, date: new Date() }
+        : { category: document.getElementById('budget-category').value, amount: parseFloat(document.getElementById('budget-amount').value) };
+    updateData(formId, data);
+    saveToLocalStorage();
+    updateUI();
+    e.target.reset();
+}
 
-    const transaction = {
-        id: Date.now(),
-        description,
-        amount,
-        type,
-        category,
-        date: new Date()
-    };
+function updateData(type, data) {
+    type === 'transaction-form' ? transactions.push(data) : budgets[data.category] = data.amount;
+}
 
-    transactions.push(transaction);
+function saveToLocalStorage() {
+    localStorage.setItem('transactions', JSON.stringify(transactions));
+    localStorage.setItem('budgets', JSON.stringify(budgets));
+}
+
+function loadFromLocalStorage() {
+    transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+    budgets = JSON.parse(localStorage.getItem('budgets')) || {};
+}
+
+function updateUI() {
+    document.getElementById('balance-amount').textContent = transactions.reduce((sum, t) => sum + (t.type === 'income' ? t.amount : -t.amount), 0).toFixed(2);
     updateTransactionsList();
-    updateBudgetProgress();
-    updateMonthlyReport();
+    updateBudgetList();
+    updateExpenseChart();
+    updateReport();
+}
 
-    transactionForm.reset();
-});
-
-// Update transactions list
 function updateTransactionsList() {
-    transactionsList.innerHTML = '';
-    transactions.forEach(transaction => {
-        const li = document.createElement('li');
-        li.textContent = `${transaction.description}: $${transaction.amount} (${transaction.type} - ${transaction.category})`;
-        transactionsList.appendChild(li);
-    });
+    const list = document.getElementById('transactions-list');
+    const searchTerm = document.getElementById('search').value.toLowerCase();
+    const typeFilter = document.getElementById('filter-type').value;
+    const categoryFilter = document.getElementById('filter-category').value;
+
+    list.innerHTML = transactions
+        .filter(t => t.description.toLowerCase().includes(searchTerm) && (typeFilter === 'all' || t.type === typeFilter) && (categoryFilter === 'all' || t.category === categoryFilter))
+        .map(t => `<li>${t.description}: $${t.amount.toFixed(2)} (${t.type} - ${t.category})</li>`)
+        .join('');
 }
 
-// Update budget progress
-function updateBudgetProgress() {
-    const totalIncome = transactions
-        .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0);
-    
-    const totalExpenses = transactions
+function updateBudgetList() {
+    document.getElementById('budget-list').innerHTML = Object.entries(budgets)
+        .map(([category, amount]) => `<li>${category}: $${amount.toFixed(2)}</li>`)
+        .join('');
+}
+
+function updateExpenseChart() {
+    const expensesByCategory = transactions
         .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0);
+        .reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc; }, {});
 
-    const remainingBudget = totalIncome - totalExpenses;
-
-    budgetProgress.textContent = `Remaining Budget: $${remainingBudget.toFixed(2)}`;
+    new Chart(document.getElementById('expense-chart').getContext('2d'), {
+        type: 'pie',
+        data: {
+            labels: Object.keys(expensesByCategory),
+            datasets: [{ data: Object.values(expensesByCategory), backgroundColor: ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e67e22', '#1abc9c', '#34495e'] }]
+        },
+        options: { responsive: true, title: { display: true, text: 'Expenses by Category' } }
+    });
 }
 
-// Update monthly report
-function updateMonthlyReport() {
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
+function updateReport() {
+    document.getElementById('report-content').innerHTML = generateReport(document.getElementById('report-type').value);
+}
 
-    const monthTransactions = transactions.filter(t => {
-        const transactionMonth = t.date.getMonth();
-        const transactionYear = t.date.getFullYear();
-        return transactionMonth === currentMonth && transactionYear === currentYear;
-    });
+function generateReport(type) {
+    const currentDate = new Date();
+    const reportData = transactions.reduce((acc, t) => {
+        if (type === 'monthly' && (new Date(t.date).getMonth() !== currentDate.getMonth() || new Date(t.date).getFullYear() !== currentDate.getFullYear())) return acc;
+        acc[t.category] = acc[t.category] || { income: 0, expense: 0 };
+        acc[t.category][t.type] += t.amount;
+        acc.total[t.type] += t.amount;
+        return acc;
+    }, { total: { income: 0, expense: 0 } });
 
-    const incomeByCategory = {};
-    const expensesByCategory = {};
-
-    monthTransactions.forEach(t => {
-        if (t.type === 'income') {
-            incomeByCategory[t.category] = (incomeByCategory[t.category] || 0) + t.amount;
-        } else {
-            expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + t.amount;
+    let report = `<h3>${type.charAt(0).toUpperCase() + type.slice(1)} Report</h3>`;
+    if (type === 'monthly') {
+        report += `<p>Total Income: $${reportData.total.income.toFixed(2)}</p>
+                   <p>Total Expenses: $${reportData.total.expense.toFixed(2)}</p>
+                   <p>Net: $${(reportData.total.income - reportData.total.expense).toFixed(2)}</p>`;
+    } else {
+        for (const [category, totals] of Object.entries(reportData)) {
+            if (category !== 'total') {
+                report += `<h4>${category}</h4>
+                           <p>Income: $${totals.income.toFixed(2)}</p>
+                           <p>Expenses: $${totals.expense.toFixed(2)}</p>
+                           <p>Net: $${(totals.income - totals.expense).toFixed(2)}</p>`;
+            }
         }
-    });
-
-    let reportHTML = '<h3>Income</h3>';
-    for (const category in incomeByCategory) {
-        reportHTML += `<p>${category}: $${incomeByCategory[category].toFixed(2)}</p>`;
     }
-
-    reportHTML += '<h3>Expenses</h3>';
-    for (const category in expensesByCategory) {
-        reportHTML += `<p>${category}: $${expensesByCategory[category].toFixed(2)}</p>`;
-    }
-
-    monthlyReport.innerHTML = reportHTML;
+    return report;
 }
+
+document.addEventListener('DOMContentLoaded', initializeApp);
