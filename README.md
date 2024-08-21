@@ -13,6 +13,8 @@ This personal finance manager is a web-based application that helps you track yo
 - Filter and search transactions
 - Visualize expenses with a pie chart
 
+![image](https://github.com/user-attachments/assets/adac2d70-d139-45c6-9dcd-e662a6ca32e9)
+
 ## How to Use
 
 ### Adding Transactions
